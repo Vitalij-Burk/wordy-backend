@@ -21,4 +21,4 @@ tokio = { version = "1.48.0", features = ["full"] }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
 translators = { version = "0.1.5", features = ["google", "tokio-async"] }
-validator = "0.20.0"
+validator = { version = "0.20.0", features = ["derive"] }

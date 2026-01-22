@@ -1,6 +1,9 @@
 use heck::ToTitleCase;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+use crate::api::models::user::CreateUserDTO;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateUser {
@@ -28,23 +31,15 @@ impl User {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
-pub struct UserEntity {
+#[derive(Debug, Clone)]
+pub struct UserDomain {
     pub id: i32,
 
     pub key: String,
     pub name: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UserD {
-    pub id: i32,
-
-    pub key: String,
-    pub name: String,
-}
-
-impl UserD {
+impl UserDomain {
     pub fn new(key: &str, name: &str) -> Self {
         let id = rand::rng().random::<i32>();
 
@@ -56,28 +51,16 @@ impl UserD {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UserDTO {
-    pub id: i32,
-
-    pub key: String,
-    pub name: String
+#[derive(Error, Debug)]
+pub enum UserDomainError {
+    #[error("Unknown error")]
+    Unknown
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateUserDTO {
-    pub key: String,
-    pub name: String,
-}
+impl TryFrom<CreateUserDTO> for UserDomain {
+    type Error = UserDomainError;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateUserDTO {
-    pub key: Option<String>,
-    pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum DeleteUserDTO {
-    ById { id: i32 },
-    ByKey { key: String },
+    fn try_from(dto: CreateUserDTO) -> Result<Self, Self::Error> {
+        Ok(UserDomain::new(&dto.key, &dto.name))
+    }
 }

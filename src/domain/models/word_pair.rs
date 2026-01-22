@@ -1,6 +1,9 @@
 use heck::ToTitleCase;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+use crate::api::models::word_pair::CreateWordPairDTO;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateWordPair {
@@ -42,8 +45,8 @@ impl WordPair {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
-pub struct WordPairEntity {
+#[derive(Debug, Clone)]
+pub struct WordPairDomain {
     pub id: i32,
     pub user_id: i32,
 
@@ -53,15 +56,10 @@ pub struct WordPairEntity {
     pub source_language: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct WordPairDomain {
-    pub id: i32,
-    pub user_id: i32,
-
-    pub target_text: String,
-    pub source_text: String,
-    pub target_language: String,
-    pub source_language: String,
+#[derive(Error, Debug)]
+pub enum WordPairDomainError {
+    #[error("Unknown error")]
+    Unknown,
 }
 
 impl WordPairDomain {
@@ -85,25 +83,10 @@ impl WordPairDomain {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct WordPairDTO {
-    pub id: i32,
+impl TryFrom<CreateWordPairDTO> for WordPairDomain {
+    type Error = WordPairDomainError;
 
-    pub target_text: String,
-    pub source_text: String,
-    pub target_language: String,
-    pub source_language: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CreateWordPairDTO {
-    pub target_text: String,
-    pub source_text: String,
-    pub target_language: String,
-    pub source_language: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum DeleteWordPairDTO {
-    ById { id: i32 },
+    fn try_from(dto: CreateWordPairDTO) -> Result<Self, Self::Error> {
+        Ok(WordPairDomain::new(&dto.user_id, &dto.target_text, &dto.source_text, &dto.target_language, &dto.source_language))
+    }
 }
