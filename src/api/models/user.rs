@@ -30,7 +30,7 @@ pub struct CreateUserDTO {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Validate)]
-pub struct UpdateUserDTO {
+pub struct _UpdateUserDTO {
     #[validate(length(min = 3, max = 30))]
     pub key: Option<String>,
     #[validate(length(min = 2, max = 20))]
@@ -38,13 +38,13 @@ pub struct UpdateUserDTO {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum GetUserDTO {
+pub enum _GetUserDTO {
     ById { id: i32 },
     ByKey { key: String },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum DeleteUserDTO {
+pub enum _DeleteUserDTO {
     ById { id: i32 },
     ByKey { key: String },
 }

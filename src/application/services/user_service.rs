@@ -33,6 +33,9 @@ pub enum UserServiceError {
 
     #[error("Database error: `{0}`")]
     Database(#[from] sqlx::Error),
+
+    #[error("Unknown error")]
+    Unknown,
 }
 
 impl<Repo> UserService<Repo>

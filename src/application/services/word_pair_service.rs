@@ -46,7 +46,7 @@ where
     ) -> Result<WordPair, WordPairServiceError> {
         let word_pair = WordPair::new(
             &user_id,
-            &params.target_language.to_title_case(),
+            &params.target_text.to_title_case(),
             &params.source_text,
             &params.target_language,
             &params.source_language,

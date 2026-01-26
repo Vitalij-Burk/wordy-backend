@@ -15,6 +15,9 @@ pub enum TranslateServiceError {
 
     #[error("Translation failed: `{0}`")]
     TranslatorError(#[from] translators::Error),
+
+    #[error("Unknown error")]
+    Unknown,
 }
 
 impl<Translator> TranslateService<Translator>

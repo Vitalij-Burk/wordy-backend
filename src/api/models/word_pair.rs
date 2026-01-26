@@ -45,6 +45,6 @@ pub enum GetWordPairDTO {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum DeleteWordPairDTO {
+pub enum _DeleteWordPairDTO {
     ById { id: i32 },
 }

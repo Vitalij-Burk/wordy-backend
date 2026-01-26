@@ -6,12 +6,12 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use crate::{
     api::handlers::{
+        translate_handlers::translate,
         user_handlers::make_user,
         word_pair_handlers::{
             add_word_pair_by_user_id, add_word_pair_by_user_key, get_word_pairs_by_user_id,
             get_word_pairs_by_user_key,
         },
-        translate_handlers::translate,
     },
     application::services::{
         translate_service::TranslateService, user_service::UserService,
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app: Router = Router::new()
         .route("/", get(|| async { "Hello world!" }))
         .route("/user/create/", post(make_user))
-        .route("/translate", post(translate))
+        .route("/translate/", post(translate))
         .route(
             "/user/user_id/{user_id}/wordpair/create/",
             post(add_word_pair_by_user_id),
