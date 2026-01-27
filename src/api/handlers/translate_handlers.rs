@@ -15,9 +15,9 @@ pub async fn translate(
     State(state): State<AppState>,
     Json(dto): Json<TranslateDTO>,
 ) -> Result<Json<TranslatedDTO>, HandlerError> {
-    let target_text = state
+    let res = state
         .translate_service
-        .translate_text(&dto.source_text, &dto.target_language, &dto.source_language)
+        .translate_text(&dto)
         .await
         .map_err(|error| match error {
             TranslateServiceError::TranslatorError(_) => {
@@ -30,10 +30,10 @@ pub async fn translate(
         })?;
 
     let dto = TranslatedDTO {
-        target_text: target_text,
-        source_text: dto.source_text,
-        target_language: dto.target_language,
-        source_language: dto.source_language,
+        target_text: res.target_text,
+        source_text: res.source_text,
+        target_language: res.target_language,
+        source_language: res.source_language,
     };
 
     Ok(Json(dto))

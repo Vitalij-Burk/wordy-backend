@@ -1,6 +1,5 @@
 use heck::ToTitleCase;
 use rand::Rng;
-use thiserror::Error;
 
 use crate::infrastructure::storage::database::models::word_pair::WordPairEntity;
 
@@ -47,10 +46,4 @@ impl From<WordPairEntity> for WordPair {
             source_language: value.source_language,
         }
     }
-}
-
-#[derive(Error, Debug)]
-pub enum WordPairError {
-    #[error("Unknown error")]
-    Unknown,
 }

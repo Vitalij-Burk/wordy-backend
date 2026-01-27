@@ -1,7 +1,10 @@
 use thiserror::Error;
 use tracing::error;
 
-use crate::domain::traits::translator::translator::ITranslator;
+use crate::{
+    api::models::translate::TranslateDTO,
+    domain::{models::translate::Translation, traits::translator::translator::ITranslator},
+};
 
 #[derive(Clone)]
 pub struct TranslateService<Translator> {
@@ -29,21 +32,31 @@ where
             translator: translator,
         }
     }
+
     pub async fn translate_text(
         &self,
-        source_text: &str,
-        target_language: &str,
-        source_language: &str,
-    ) -> Result<String, TranslateServiceError> {
-        let target_text = self
+        params: &TranslateDTO,
+    ) -> Result<Translation, TranslateServiceError> {
+        let res = self
             .translator
-            .translate_text(source_text, source_language, target_language)
+            .translate_text(
+                &params.source_text,
+                &params.source_language,
+                &params.target_language,
+            )
             .await
             .map_err(|error| {
                 error!("Translation error: {}", error);
                 error
             })?;
 
-        Ok(target_text)
+        let translation = Translation::new(
+            &res,
+            &params.source_text,
+            &params.target_language,
+            &params.source_language,
+        );
+
+        Ok(translation)
     }
 }

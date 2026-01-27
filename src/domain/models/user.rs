@@ -1,6 +1,5 @@
 use heck::ToTitleCase;
 use rand::Rng;
-use thiserror::Error;
 
 use crate::infrastructure::storage::database::models::user::UserEntity;
 
@@ -32,10 +31,4 @@ impl From<UserEntity> for User {
             name: value.name,
         }
     }
-}
-
-#[derive(Error, Debug)]
-pub enum UserError {
-    #[error("Unknown error")]
-    Unknown,
 }
