@@ -9,6 +9,7 @@ async-trait = "0.1.89"
 axum = { version = "0.8.8", features = ["macros"] }
 dotenv = "0.15.0"
 dotenvy = "0.15.7"
+heck = "0.5.0"
 rand = "0.9.2"
 reqwest = { version = "0.12.25", features = ["json"] }
 serde = "1.0.228"
@@ -20,3 +21,4 @@ tokio = { version = "1.48.0", features = ["full"] }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
 translators = { version = "0.1.5", features = ["google", "tokio-async"] }
+validator = { version = "0.20.0", features = ["derive"] }
