@@ -37,14 +37,3 @@ pub struct CreateWordPairDTO {
     #[validate(length(min = 1, max = 5))]
     pub source_language: String,
 }
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum GetWordPairDTO {
-    ById { id: i32 },
-    ByUserId { user_id: i32 },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _DeleteWordPairDTO {
-    ById { id: i32 },
-}

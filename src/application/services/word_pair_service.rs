@@ -3,7 +3,7 @@ use thiserror::Error;
 use tracing::error;
 
 use crate::{
-    api::models::word_pair::{CreateWordPairDTO, GetWordPairDTO},
+    api::models::word_pair::CreateWordPairDTO,
     domain::{
         models::word_pair::WordPair,
         traits::repositories::{repository::Repository, word_pair_repository::IWordPairRepository},
@@ -71,27 +71,25 @@ impl<Repo> WordPairService<Repo>
 where
     Repo: IWordPairRepository<Error = sqlx::Error>,
 {
-    pub async fn get(&self, params: GetWordPairDTO) -> Result<Vec<WordPair>, WordPairServiceError> {
-        match params {
-            GetWordPairDTO::ByUserId { user_id } => {
-                let res = self
-                    .repo
-                    .select_by_user_id(&user_id)
-                    .await
-                    .map_err(|error| {
-                        error!("WordPair DB error: {}", error);
-                        error
-                    })?;
-                let mut word_pairs: Vec<WordPair> = vec![];
+    pub async fn get_by_user_id(
+        &self,
+        user_id: &i32,
+    ) -> Result<Vec<WordPair>, WordPairServiceError> {
+        let res = self
+            .repo
+            .select_by_user_id(&user_id)
+            .await
+            .map_err(|error| {
+                error!("WordPair DB error: {}", error);
+                error
+            })?;
+        let mut word_pairs: Vec<WordPair> = vec![];
 
-                for res_item in res.into_iter() {
-                    word_pairs.push(WordPair::from(res_item))
-                }
-
-                Ok(word_pairs)
-            }
-            GetWordPairDTO::ById { id } => Err(WordPairServiceError::Unknown),
+        for res_item in res.into_iter() {
+            word_pairs.push(WordPair::from(res_item))
         }
+
+        Ok(word_pairs)
     }
 }
 
@@ -119,6 +117,23 @@ mod tests {
 
         async fn insert(&self, item: &Self::Item) -> Result<Self::Item, Self::Error> {
             Ok(item.clone())
+        }
+
+        async fn select_by_id(&self, id: &i32) -> Result<Self::Item, Self::Error> {
+            let test_word_pair = WordPairEntity {
+                id: *id,
+                user_id: 13432324,
+                target_text: "Hallo".to_string(),
+                source_text: "Hello".to_string(),
+                target_language: "de".to_string(),
+                source_language: "en".to_string(),
+            };
+
+            Ok(test_word_pair)
+        }
+
+        async fn delete_by_id(&self, id: &i32) -> Result<(), Self::Error> {
+            Ok(())
         }
     }
 
@@ -190,9 +205,7 @@ mod tests {
         let test_user_id = 1234567;
 
         let res = word_pair_service
-            .get(GetWordPairDTO::ByUserId {
-                user_id: test_user_id,
-            })
+            .get_by_user_id(&test_user_id)
             .await
             .unwrap();
 

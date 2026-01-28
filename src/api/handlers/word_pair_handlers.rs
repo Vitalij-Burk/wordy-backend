@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::api::{
-    models::word_pair::{CreateWordPairDTO, GetWordPairDTO, WordPairDTO},
+    models::word_pair::{CreateWordPairDTO, WordPairDTO},
     types::HandlerError,
 };
 use crate::{
@@ -89,7 +89,7 @@ pub async fn get_word_pairs_by_user_id(
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
     let res = state
         .word_pair_service
-        .get(GetWordPairDTO::ByUserId { user_id: user_id })
+        .get_by_user_id(&user_id)
         .await
         .map_err(|error| match error {
             WordPairServiceError::Database(_) => {
@@ -127,7 +127,7 @@ pub async fn get_word_pairs_by_user_key(
 
     let res = state
         .word_pair_service
-        .get(GetWordPairDTO::ByUserId { user_id: user.id })
+        .get_by_user_id(&user.id)
         .await
         .map_err(|error| match error {
             WordPairServiceError::Database(_) => {

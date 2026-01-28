@@ -36,15 +36,3 @@ pub struct _UpdateUserDTO {
     #[validate(length(min = 2, max = 20))]
     pub name: Option<String>,
 }
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _GetUserDTO {
-    ById { id: i32 },
-    ByKey { key: String },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _DeleteUserDTO {
-    ById { id: i32 },
-    ByKey { key: String },
-}

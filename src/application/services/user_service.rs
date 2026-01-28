@@ -111,12 +111,39 @@ mod tests {
         type Item = UserEntity;
         type Error = sqlx::Error;
 
-        fn new(db: i32) -> Self {
+        fn new(db: Self::Pool) -> Self {
             Self { _db: db }
         }
 
-        async fn insert(&self, item: &Self::Item) -> Result<Self::Item, Self::Error> {
+        async fn insert(&self, item: &UserEntity) -> Result<Self::Item, Self::Error> {
             Ok(item.clone())
+        }
+
+        async fn select_by_id(&self, id: &i32) -> Result<Self::Item, Self::Error> {
+            let test_user = UserEntity {
+                id: *id,
+                key: "faksfjas".to_string(),
+                name: "Mdafasdfd".to_string(),
+            };
+
+            Ok(test_user)
+        }
+
+        async fn delete_by_id(&self, id: &i32) -> Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    #[async_trait]
+    impl IUserRepository for TestUserRepository {
+        async fn select_by_key(&self, key: &str) -> Result<Self::Item, Self::Error> {
+            let test_user = UserEntity {
+                id: 122398923,
+                key: key.to_string(),
+                name: "Mdafasdfd".to_string(),
+            };
+
+            Ok(test_user)
         }
     }
 
