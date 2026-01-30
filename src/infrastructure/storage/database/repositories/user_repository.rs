@@ -1,6 +1,6 @@
 use crate::{
     domain::traits::repositories::{repository::Repository, user_repository::IUserRepository},
-    infrastructure::storage::database::models::user::UserEntity,
+    infrastructure::storage::database::models::user::{UpdateDBUser, UserEntity},
 };
 use async_trait::async_trait;
 use sqlx::{Error, postgres::PgPool};
@@ -47,8 +47,8 @@ impl Repository for UserPostgresRepository {
     }
 
     async fn delete_by_id(&self, id: &i32) -> Result<(), Self::Error> {
-        sqlx::query_as!(Self::Item, "DELETE FROM users WHERE id = $1", &id,)
-            .fetch_one(&self.db)
+        sqlx::query_as!(Self::Item, "DELETE FROM users WHERE id = $1", &id)
+            .execute(&self.db)
             .await?;
 
         Ok(())
@@ -67,5 +67,23 @@ impl IUserRepository for UserPostgresRepository {
         .await?;
 
         Ok(db_user)
+    }
+
+    async fn update_by_id(
+        &self,
+        id: &i32,
+        params: UpdateDBUser,
+    ) -> Result<Self::Item, Self::Error> {
+        let updated_db_user = sqlx::query_as!(
+            Self::Item,
+            "UPDATE users SET key = COALESCE($1, key), name = COALESCE($2, name) WHERE id = $3 RETURNING *",
+            params.key,
+            params.name,
+            &id
+        )
+        .fetch_one(&self.db)
+        .await?;
+
+        Ok(updated_db_user)
     }
 }

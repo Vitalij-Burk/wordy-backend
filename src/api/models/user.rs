@@ -30,7 +30,7 @@ pub struct CreateUserDTO {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Validate)]
-pub struct _UpdateUserDTO {
+pub struct UpdateUserDTO {
     #[validate(length(min = 3, max = 30))]
     pub key: Option<String>,
     #[validate(length(min = 2, max = 20))]

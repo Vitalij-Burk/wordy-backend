@@ -53,7 +53,7 @@ impl Repository for WordPairPostgresRepository {
 
     async fn delete_by_id(&self, id: &i32) -> Result<(), Self::Error> {
         sqlx::query_as!(Self::Item, "DELETE FROM word_pairs WHERE id = $1", &id,)
-            .fetch_one(&self.db)
+            .execute(&self.db)
             .await?;
 
         Ok(())

@@ -17,3 +17,9 @@ impl From<User> for UserEntity {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct UpdateDBUser {
+    pub key: Option<String>,
+    pub name: Option<String>,
+}

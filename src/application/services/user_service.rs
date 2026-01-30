@@ -4,12 +4,12 @@ use thiserror::Error;
 use tracing::error;
 
 use crate::{
-    api::models::user::CreateUserDTO,
+    api::models::user::{CreateUserDTO, UpdateUserDTO},
     domain::{
         models::user::User,
         traits::repositories::{repository::Repository, user_repository::IUserRepository},
     },
-    infrastructure::storage::database::models::user::UserEntity,
+    infrastructure::storage::database::models::user::{UpdateDBUser, UserEntity},
 };
 
 #[derive(Clone)]
@@ -68,12 +68,7 @@ where
 
         Ok(user)
     }
-}
 
-impl<Repo> UserService<Repo>
-where
-    Repo: IUserRepository<Error = sqlx::Error>,
-{
     pub async fn get_by_id(&self, id: &i32) -> Result<User, UserServiceError> {
         let res = self.repo.select_by_id(id).await.map_err(|error| {
             error!("User DB error: {}", error);
@@ -84,6 +79,20 @@ where
         Ok(user)
     }
 
+    pub async fn delete_by_id(&self, id: &i32) -> Result<(), UserServiceError> {
+        self.repo.delete_by_id(id).await.map_err(|error| {
+            error!("User DB error: {}", error);
+            error
+        })?;
+
+        Ok(())
+    }
+}
+
+impl<Repo> UserService<Repo>
+where
+    Repo: IUserRepository<Error = sqlx::Error>,
+{
     pub async fn get_by_key(&self, key: &str) -> Result<User, UserServiceError> {
         let res = self.repo.select_by_key(key).await.map_err(|error| {
             error!("User DB error: {}", error);
@@ -93,11 +102,33 @@ where
 
         Ok(user)
     }
+
+    pub async fn update_by_id(
+        &self,
+        id: &i32,
+        params: &UpdateUserDTO,
+    ) -> Result<User, UserServiceError> {
+        let params = UpdateDBUser {
+            key: params.key.to_owned(),
+            name: params.name.to_owned(),
+        };
+
+        let res = self.repo.update_by_id(id, params).await.map_err(|error| {
+            error!("User DB error: {}", error);
+            error
+        })?;
+
+        let user = User::from(res);
+
+        Ok(user)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use async_trait::async_trait;
+
+    use crate::infrastructure::storage::database::models::user::UpdateDBUser;
 
     use super::*;
 
@@ -140,6 +171,20 @@ mod tests {
             let test_user = UserEntity {
                 id: 122398923,
                 key: key.to_string(),
+                name: "Mdafasdfd".to_string(),
+            };
+
+            Ok(test_user)
+        }
+
+        async fn update_by_id(
+            &self,
+            id: &i32,
+            params: UpdateDBUser,
+        ) -> Result<Self::Item, Self::Error> {
+            let test_user = UserEntity {
+                id: *id,
+                key: "Hey".to_string(),
                 name: "Mdafasdfd".to_string(),
             };
 

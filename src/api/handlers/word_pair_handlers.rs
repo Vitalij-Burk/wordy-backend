@@ -35,14 +35,9 @@ pub async fn add_word_pair_by_user_id(
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
         })?;
 
-    Ok(Json(WordPairDTO {
-        id: res.id,
-        user_id: res.user_id,
-        target_text: res.target_text,
-        source_text: res.source_text,
-        target_language: res.target_language,
-        source_language: res.source_language,
-    }))
+    let dto = WordPairDTO::from(res);
+
+    Ok(Json(dto))
 }
 
 #[axum::debug_handler]
@@ -80,6 +75,28 @@ pub async fn add_word_pair_by_user_key(
     let dto = WordPairDTO::from(res);
 
     Ok(Json(dto))
+}
+
+#[axum::debug_handler]
+pub async fn get_word_pair_by_id(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> Result<Json<WordPairDTO>, HandlerError> {
+    let res = state
+        .word_pair_service
+        .get_by_id(&id)
+        .await
+        .map_err(|error| match error {
+            WordPairServiceError::Database(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+        })?;
+
+    let word_pair = WordPairDTO::from(res);
+
+    Ok(Json(word_pair))
 }
 
 #[axum::debug_handler]
@@ -144,4 +161,24 @@ pub async fn get_word_pairs_by_user_key(
     }
 
     Ok(Json(dtos))
+}
+
+#[axum::debug_handler]
+pub async fn delete_word_pair_by_id(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> Result<(), HandlerError> {
+    state
+        .word_pair_service
+        .delete_by_id(&id)
+        .await
+        .map_err(|error| match error {
+            WordPairServiceError::Database(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+        })?;
+
+    Ok(())
 }

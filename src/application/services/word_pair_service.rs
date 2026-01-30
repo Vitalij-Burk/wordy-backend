@@ -65,6 +65,26 @@ where
 
         Ok(word_pair)
     }
+
+    pub async fn get_by_id(&self, id: &i32) -> Result<WordPair, WordPairServiceError> {
+        let res = self.repo.select_by_id(&id).await.map_err(|error| {
+            error!("WordPair DB error: {}", error);
+            error
+        })?;
+
+        let word_pair = WordPair::from(res);
+
+        Ok(word_pair)
+    }
+
+    pub async fn delete_by_id(&self, id: &i32) -> Result<(), WordPairServiceError> {
+        self.repo.delete_by_id(&id).await.map_err(|error| {
+            error!("WordPair DB error: {}", error);
+            error
+        })?;
+
+        Ok(())
+    }
 }
 
 impl<Repo> WordPairService<Repo>
