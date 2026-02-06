@@ -4,21 +4,24 @@ use axum::{
     http::StatusCode,
 };
 
-use crate::api::{
-    models::word_pair::{CreateWordPairDTO, WordPairDTO},
-    types::HandlerError,
-};
 use crate::{
     AppState,
     application::services::{
         user_service::UserServiceError, word_pair_service::WordPairServiceError,
     },
 };
+use crate::{
+    api::{
+        models::word_pair::{CreateWordPairDTO, WordPairDTO},
+        types::HandlerError,
+    },
+    domain::types::ID,
+};
 
 #[axum::debug_handler]
 pub async fn add_word_pair_by_user_id(
     State(state): State<AppState>,
-    Path(user_id): Path<i32>,
+    Path(user_id): Path<ID>,
     Json(dto): Json<CreateWordPairDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
     let res = state
@@ -80,7 +83,7 @@ pub async fn add_word_pair_by_user_key(
 #[axum::debug_handler]
 pub async fn get_word_pair_by_id(
     State(state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<ID>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
     let res = state
         .word_pair_service
@@ -102,7 +105,7 @@ pub async fn get_word_pair_by_id(
 #[axum::debug_handler]
 pub async fn get_word_pairs_by_user_id(
     State(state): State<AppState>,
-    Path(user_id): Path<i32>,
+    Path(user_id): Path<ID>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
     let res = state
         .word_pair_service
@@ -166,7 +169,7 @@ pub async fn get_word_pairs_by_user_key(
 #[axum::debug_handler]
 pub async fn delete_word_pair_by_id(
     State(state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<ID>,
 ) -> Result<(), HandlerError> {
     state
         .word_pair_service

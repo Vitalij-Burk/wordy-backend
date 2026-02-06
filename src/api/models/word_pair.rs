@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::domain::models::word_pair::WordPair;
+use crate::domain::{models::word_pair::WordPair, types::ID};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WordPairDTO {
-    pub id: i32,
-    pub user_id: i32,
+    pub id: ID,
+    pub user_id: ID,
 
     pub target_text: String,
     pub source_text: String,

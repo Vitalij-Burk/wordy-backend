@@ -11,6 +11,7 @@ use crate::{
         types::HandlerError,
     },
     application::services::user_service::UserServiceError,
+    domain::types::ID,
 };
 
 #[axum::debug_handler]
@@ -26,6 +27,7 @@ pub async fn create_user(
             UserServiceError::Database(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
             }
+            UserServiceError::Crypto(_) => (StatusCode::BAD_REQUEST, "Bad password for request"),
             UserServiceError::InvalidKey(_) => (StatusCode::UNPROCESSABLE_ENTITY, "Key is invalid"),
             UserServiceError::InvalidPassword(_) => {
                 (StatusCode::UNPROCESSABLE_ENTITY, "Password is too easy")
@@ -44,7 +46,7 @@ pub async fn create_user(
 #[axum::debug_handler]
 pub async fn get_user_by_id(
     State(state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<ID>,
 ) -> Result<Json<UserDTO>, HandlerError> {
     let res = state
         .user_service
@@ -88,7 +90,7 @@ pub async fn get_user_by_key(
 #[axum::debug_handler]
 pub async fn update_user_by_id(
     State(state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<ID>,
     Json(dto): Json<UpdateUserDTO>,
 ) -> Result<Json<UserDTO>, HandlerError> {
     let res = state
@@ -118,7 +120,7 @@ pub async fn update_user_by_id(
 #[axum::debug_handler]
 pub async fn delete_user_by_id(
     State(state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<ID>,
 ) -> Result<(), HandlerError> {
     state
         .user_service
