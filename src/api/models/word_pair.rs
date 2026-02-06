@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::domain::models::word_pair::WordPair;
+use crate::domain::{models::word_pair::WordPair, types::ID};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WordPairDTO {
-    pub id: i32,
-    pub user_id: i32,
+    pub id: ID,
+    pub user_id: ID,
 
     pub target_text: String,
     pub source_text: String,
@@ -36,15 +36,4 @@ pub struct CreateWordPairDTO {
     pub target_language: String,
     #[validate(length(min = 1, max = 5))]
     pub source_language: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum GetWordPairDTO {
-    ById { id: i32 },
-    ByUserId { user_id: i32 },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _DeleteWordPairDTO {
-    ById { id: i32 },
 }

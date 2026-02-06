@@ -4,21 +4,24 @@ use axum::{
     http::StatusCode,
 };
 
-use crate::api::{
-    models::word_pair::{CreateWordPairDTO, GetWordPairDTO, WordPairDTO},
-    types::HandlerError,
-};
 use crate::{
     AppState,
     application::services::{
         user_service::UserServiceError, word_pair_service::WordPairServiceError,
     },
 };
+use crate::{
+    api::{
+        models::word_pair::{CreateWordPairDTO, WordPairDTO},
+        types::HandlerError,
+    },
+    domain::types::ID,
+};
 
 #[axum::debug_handler]
 pub async fn add_word_pair_by_user_id(
     State(state): State<AppState>,
-    Path(user_id): Path<i32>,
+    Path(user_id): Path<ID>,
     Json(dto): Json<CreateWordPairDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
     let res = state
@@ -35,14 +38,9 @@ pub async fn add_word_pair_by_user_id(
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
         })?;
 
-    Ok(Json(WordPairDTO {
-        id: res.id,
-        user_id: res.user_id,
-        target_text: res.target_text,
-        source_text: res.source_text,
-        target_language: res.target_language,
-        source_language: res.source_language,
-    }))
+    let dto = WordPairDTO::from(res);
+
+    Ok(Json(dto))
 }
 
 #[axum::debug_handler]
@@ -83,13 +81,35 @@ pub async fn add_word_pair_by_user_key(
 }
 
 #[axum::debug_handler]
+pub async fn get_word_pair_by_id(
+    State(state): State<AppState>,
+    Path(id): Path<ID>,
+) -> Result<Json<WordPairDTO>, HandlerError> {
+    let res = state
+        .word_pair_service
+        .get_by_id(&id)
+        .await
+        .map_err(|error| match error {
+            WordPairServiceError::Database(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+        })?;
+
+    let word_pair = WordPairDTO::from(res);
+
+    Ok(Json(word_pair))
+}
+
+#[axum::debug_handler]
 pub async fn get_word_pairs_by_user_id(
     State(state): State<AppState>,
-    Path(user_id): Path<i32>,
+    Path(user_id): Path<ID>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
     let res = state
         .word_pair_service
-        .get(GetWordPairDTO::ByUserId { user_id: user_id })
+        .get_by_user_id(&user_id)
         .await
         .map_err(|error| match error {
             WordPairServiceError::Database(_) => {
@@ -127,7 +147,7 @@ pub async fn get_word_pairs_by_user_key(
 
     let res = state
         .word_pair_service
-        .get(GetWordPairDTO::ByUserId { user_id: user.id })
+        .get_by_user_id(&user.id)
         .await
         .map_err(|error| match error {
             WordPairServiceError::Database(_) => {
@@ -144,4 +164,24 @@ pub async fn get_word_pairs_by_user_key(
     }
 
     Ok(Json(dtos))
+}
+
+#[axum::debug_handler]
+pub async fn delete_word_pair_by_id(
+    State(state): State<AppState>,
+    Path(id): Path<ID>,
+) -> Result<(), HandlerError> {
+    state
+        .word_pair_service
+        .delete_by_id(&id)
+        .await
+        .map_err(|error| match error {
+            WordPairServiceError::Database(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+        })?;
+
+    Ok(())
 }

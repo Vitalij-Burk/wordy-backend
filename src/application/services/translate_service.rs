@@ -3,7 +3,7 @@ use tracing::error;
 
 use crate::{
     api::models::translate::TranslateDTO,
-    domain::{models::translate::Translation, traits::translator::translator::ITranslator},
+    domain::{models::translate::Translation, traits::translate::translator::ITranslator},
 };
 
 #[derive(Clone)]

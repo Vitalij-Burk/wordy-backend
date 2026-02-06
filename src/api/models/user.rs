@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::domain::models::user::User;
+use crate::domain::{models::user::User, types::ID};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UserDTO {
-    pub id: i32,
+    pub id: ID,
 
     pub key: String,
     pub name: String,
@@ -27,24 +27,14 @@ pub struct CreateUserDTO {
     pub key: String,
     #[validate(length(min = 2, max = 20))]
     pub name: String,
+    #[validate(length(min = 6, max = 25))]
+    pub password: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Validate)]
-pub struct _UpdateUserDTO {
+pub struct UpdateUserDTO {
     #[validate(length(min = 3, max = 30))]
     pub key: Option<String>,
     #[validate(length(min = 2, max = 20))]
     pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _GetUserDTO {
-    ById { id: i32 },
-    ByKey { key: String },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum _DeleteUserDTO {
-    ById { id: i32 },
-    ByKey { key: String },
 }

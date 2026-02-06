@@ -1,6 +1,7 @@
-use crate::domain::traits::translator::translator::ITranslator;
 use async_trait::async_trait;
 use translators::{GoogleTranslator, Translator};
+
+use crate::domain::traits::translate::translator::ITranslator;
 
 #[derive(Clone)]
 pub struct TranslatorsTranslator;
@@ -29,7 +30,7 @@ impl ITranslator for TranslatorsTranslator {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::traits::translator::translator::ITranslator,
+        domain::traits::translate::translator::ITranslator,
         infrastructure::external_api::translate::translate::TranslatorsTranslator,
     };
 
