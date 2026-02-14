@@ -2,3 +2,7 @@
 .env
 /.sqlx
 /migrations
+compose.yaml
+README.Docker.md
+Dockerfile
+.dockerignore
