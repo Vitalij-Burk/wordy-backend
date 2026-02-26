@@ -11,8 +11,7 @@ use crate::{
             create_user, delete_user_by_id, get_user_by_id, get_user_by_key, update_user_by_id,
         },
         word_pair_handlers::{
-            add_word_pair_by_user_id, add_word_pair_by_user_key, delete_word_pair_by_id,
-            get_word_pair_by_id, get_word_pairs_by_user_id, get_word_pairs_by_user_key,
+            add_word_pair_by_user_id, add_word_pair_by_user_key, delete_word_pair_by_id, get_word_pair_by_id, get_word_pairs_by_user_id, get_word_pairs_by_user_key, translate_and_add_word_pair_by_user_id, translate_and_add_word_pair_by_user_key
         },
     },
     application::services::{
@@ -76,12 +75,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/user/update/id/{id}/", post(update_user_by_id))
         .route("/user/delete/id/{id}/", post(delete_user_by_id))
         .route(
-            "/user/user_id/{user_id}/wordpair/create/",
+            "/user/user_id/{user_id}/wordpair/save/",
             post(add_word_pair_by_user_id),
         )
         .route(
-            "/user/key/{key}/wordpair/create/",
+            "/user/key/{key}/wordpair/save/",
             post(add_word_pair_by_user_key),
+        )
+        .route(
+            "/user/user_id/{user_id}/wordpair/create/",
+            post(translate_and_add_word_pair_by_user_id)
+        )
+        .route(
+            "/user/key/{key}/wordpair/create/",
+            post(translate_and_add_word_pair_by_user_key)
         )
         .route(
             "/user/user_id/{user_id}/wordpairs/",
