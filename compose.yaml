@@ -1,8 +1,6 @@
 services:
   server:
-    build:
-      context: .
-      target: final
+    image: wordy_backend:latest
     ports:
       - 3000:3000
     depends_on:
@@ -12,7 +10,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - RUST_LOG=debug
   db:
-    image: postgres
+    image: postgres:17-alpine
     restart: always
     user: postgres
     volumes:
