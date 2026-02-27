@@ -60,7 +60,6 @@ impl AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenvy::dotenv()?;
     tracing_subscriber::fmt::init();
     let pool = PgPoolOptions::new()
         .connect(&std::env::var("DATABASE_URL")?)
