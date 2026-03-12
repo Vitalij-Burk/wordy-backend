@@ -1,15 +1,17 @@
-use heck::ToTitleCase;
 use thiserror::Error;
 use tracing::error;
 
 use crate::{
-    api::models::word_pair::CreateWordPairDTO,
+    api::word_pair::models::CreateWordPairDTO,
     domain::{
         models::word_pair::WordPair,
         traits::repositories::{repository::Repository, word_pair_repository::IWordPairRepository},
         types::ID,
     },
-    infrastructure::storage::database::models::word_pair::WordPairEntity,
+    infrastructure::{
+        storage::database::models::word_pair::WordPairEntity,
+        utils::string::to_title_case::TitleCase,
+    },
 };
 
 #[derive(Clone)]

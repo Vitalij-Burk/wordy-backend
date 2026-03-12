@@ -2,7 +2,7 @@ use thiserror::Error;
 use tracing::error;
 
 use crate::{
-    api::models::translate::TranslateDTO,
+    api::translate::models::TranslateDTO,
     domain::{models::translate::Translation, traits::translate::translator::ITranslator},
 };
 

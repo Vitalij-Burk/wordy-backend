@@ -5,17 +5,20 @@ use axum::{
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use crate::{
-    api::handlers::{
-        translate_handlers::translate,
-        user_handlers::{
+    api::{
+        auth::auth_middleware::auth_middleware,
+        translate::translate_handlers::translate,
+        user::user_handlers::{
             create_user, delete_user_by_id, get_user_by_id, get_user_by_key, update_user_by_id,
         },
-        word_pair_handlers::{
-            add_word_pair_by_user_id, add_word_pair_by_user_key, delete_word_pair_by_id, get_word_pair_by_id, get_word_pairs_by_user_id, get_word_pairs_by_user_key, translate_and_add_word_pair_by_user_id, translate_and_add_word_pair_by_user_key
+        word_pair::word_pair_handlers::{
+            add_word_pair_by_user_id, add_word_pair_by_user_key, delete_word_pair_by_id,
+            get_word_pair_by_id, get_word_pairs_by_user_id, get_word_pairs_by_user_key,
+            translate_and_add_word_pair_by_user_id, translate_and_add_word_pair_by_user_key,
         },
     },
     application::services::{
-        translate_service::TranslateService, user_service::UserService,
+        auth_service::AuthService, translate_service::TranslateService, user_service::UserService,
         word_pair_service::WordPairService,
     },
     domain::traits::repositories::repository::Repository,
@@ -38,6 +41,7 @@ pub struct AppState {
     pub translate_service: TranslateService<TranslatorsTranslator>,
     pub user_service: UserService<UserPostgresRepository>,
     pub word_pair_service: WordPairService<WordPairPostgresRepository>,
+    pub auth_service: AuthService,
 }
 
 impl AppState {
@@ -49,22 +53,29 @@ impl AppState {
         let user_service = UserService::new(user_repo);
         let word_pair_service = WordPairService::new(word_pair_repo);
         let translate_service = TranslateService::new(translator);
+        let auth_service = AuthService::new();
 
         Self {
             translate_service: translate_service,
             user_service: user_service,
             word_pair_service: word_pair_service,
+            auth_service: auth_service,
         }
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenvy::dotenv().ok();
+
     tracing_subscriber::fmt::init();
+
     let pool = PgPoolOptions::new()
         .connect(&std::env::var("DATABASE_URL")?)
         .await?;
+
     let state = AppState::new(pool);
+
     let app: Router = Router::new()
         .route("/", get(|| async { "Hello world!" }))
         .route("/user/create/", post(create_user))
@@ -83,11 +94,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .route(
             "/user/user_id/{user_id}/wordpair/create/",
-            post(translate_and_add_word_pair_by_user_id)
+            post(translate_and_add_word_pair_by_user_id),
         )
         .route(
             "/user/key/{key}/wordpair/create/",
-            post(translate_and_add_word_pair_by_user_key)
+            post(translate_and_add_word_pair_by_user_key),
         )
         .route(
             "/user/user_id/{user_id}/wordpairs/",
@@ -99,8 +110,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .route("/wordpair/id/{id}/", get(get_word_pair_by_id))
         .route("/wordpair/delete/id/{id}/", post(delete_word_pair_by_id))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ))
         .with_state(state);
+
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app).await?;
+
     Ok(())
 }

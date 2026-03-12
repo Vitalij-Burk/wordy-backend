@@ -4,13 +4,12 @@ use reqwest::StatusCode;
 use crate::{
     AppState,
     api::{
-        models::translate::{TranslateDTO, TranslatedDTO},
+        translate::models::{TranslateDTO, TranslatedDTO},
         types::HandlerError,
     },
     application::services::translate_service::TranslateServiceError,
 };
 
-#[axum::debug_handler]
 pub async fn translate(
     State(state): State<AppState>,
     Json(dto): Json<TranslateDTO>,
