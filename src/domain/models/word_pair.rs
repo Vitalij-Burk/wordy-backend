@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
-use heck::ToTitleCase;
 use uuid::Uuid;
 
-use crate::domain::types::ID;
+use crate::{domain::types::ID, infrastructure::utils::string::to_title_case::TitleCase};
 
 #[derive(Debug, Clone)]
 pub struct WordPair {

@@ -15,9 +15,7 @@ impl ICrypto for Argon2Crypto {
 
         let argon2 = Argon2::default();
 
-        let password_hash = argon2
-            .hash_password(source.as_bytes(), &salt)?
-            .to_string();
+        let password_hash = argon2.hash_password(source.as_bytes(), &salt)?.to_string();
 
         Ok(password_hash)
     }

@@ -4,7 +4,7 @@ use thiserror::Error;
 use tracing::error;
 
 use crate::{
-    api::models::user::{CreateUserDTO, UpdateUserDTO},
+    api::user::models::{CreateUserDTO, UpdateUserDTO},
     domain::{
         models::user::User,
         traits::{

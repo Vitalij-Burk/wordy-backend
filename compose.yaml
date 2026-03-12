@@ -2,7 +2,7 @@ services:
   server:
     image: wordy_backend:latest
     ports:
-      - 3000:3000
+      - 3001:3000
     depends_on:
       db:
         condition: service_healthy
@@ -19,7 +19,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 10s

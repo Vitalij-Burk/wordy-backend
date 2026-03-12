@@ -7,14 +7,13 @@ use axum::{
 use crate::{
     AppState,
     api::{
-        models::user::{CreateUserDTO, UpdateUserDTO, UserDTO},
         types::HandlerError,
+        user::models::{CreateUserDTO, UpdateUserDTO, UserDTO},
     },
     application::services::user_service::UserServiceError,
     domain::types::ID,
 };
 
-#[axum::debug_handler]
 pub async fn create_user(
     State(state): State<AppState>,
     Json(dto): Json<CreateUserDTO>,
@@ -43,7 +42,6 @@ pub async fn create_user(
     Ok(Json(user))
 }
 
-#[axum::debug_handler]
 pub async fn get_user_by_id(
     State(state): State<AppState>,
     Path(id): Path<ID>,
@@ -65,7 +63,6 @@ pub async fn get_user_by_id(
     Ok(Json(user))
 }
 
-#[axum::debug_handler]
 pub async fn get_user_by_key(
     State(state): State<AppState>,
     Path(key): Path<String>,
@@ -87,7 +84,6 @@ pub async fn get_user_by_key(
     Ok(Json(user))
 }
 
-#[axum::debug_handler]
 pub async fn update_user_by_id(
     State(state): State<AppState>,
     Path(id): Path<ID>,
@@ -117,7 +113,6 @@ pub async fn update_user_by_id(
     Ok(Json(user))
 }
 
-#[axum::debug_handler]
 pub async fn delete_user_by_id(
     State(state): State<AppState>,
     Path(id): Path<ID>,
