@@ -14,34 +14,6 @@ use crate::{
     domain::types::ID,
 };
 
-pub async fn create_user(
-    State(state): State<AppState>,
-    Json(dto): Json<CreateUserDTO>,
-) -> Result<Json<UserDTO>, HandlerError> {
-    let res = state
-        .user_service
-        .create(&dto)
-        .await
-        .map_err(|error| match error {
-            UserServiceError::Database(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-            }
-            UserServiceError::Crypto(_) => (StatusCode::BAD_REQUEST, "Bad password for request"),
-            UserServiceError::InvalidKey(_) => (StatusCode::UNPROCESSABLE_ENTITY, "Key is invalid"),
-            UserServiceError::InvalidPassword(_) => {
-                (StatusCode::UNPROCESSABLE_ENTITY, "Password is too easy")
-            }
-            UserServiceError::KeyAlreadyExists(_) => {
-                (StatusCode::UNPROCESSABLE_ENTITY, "Key already exists")
-            }
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
-        })?;
-
-    let user = UserDTO::from(res);
-
-    Ok(Json(user))
-}
-
 pub async fn get_user_by_id(
     State(state): State<AppState>,
     Path(id): Path<ID>,

@@ -1,4 +1,4 @@
-use std::{env::VarError, path::PathBuf, string::FromUtf8Error};
+use std::{path::PathBuf, string::FromUtf8Error};
 
 use crate::{
     api::auth::models::Claims,
@@ -34,15 +34,18 @@ pub enum AuthServiceError {
     #[error("Validation error: {0}")]
     Validation(#[from] JwksTokenValidatorError),
 
+    #[error("Token expired: {0}")]
+    Expired(String),
+
     #[error("Auth communicator error: {0}")]
     AuthCommunicator(#[from] AuthCommunicatorError),
 }
 
 impl AuthService {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, AuthServiceError> {
         let validator = JwksTokenValidator;
         let http_client = reqwest::Client::new();
-        let keys_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("/keys");
+        let keys_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("keys");
 
         if !keys_dir.exists() {
             let _ = std::fs::create_dir(&keys_dir).map_err(|error| match error {
@@ -57,44 +60,45 @@ impl AuthService {
             keys_dir
                 .join("public.pem")
                 .to_str()
-                .ok_or("Unexpected error")
-                .unwrap(),
+                .ok_or_else(|| AuthServiceError::Unknown)?,
         );
         let auth_communicator = AuthCommunicator;
 
-        Self {
+        Ok(Self {
             validator,
             http_client,
             public_pem_file_io,
             auth_communicator,
-        }
+        })
     }
 
     pub async fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
-        let resp = self.public_pem_file_io.read()?;
-
         let public_pem: String;
 
-        if resp.is_empty() {
-            public_pem = self.auth_communicator.get_public_pem().await?;
+        match self.public_pem_file_io.read() {
+            Ok(resp) if !resp.is_empty() => {
+                public_pem = String::from_utf8(resp)?;
+            }
+            _ => {
+                error!("Public pem file not working");
+                public_pem = self.auth_communicator.get_public_pem().await?;
 
-            self.public_pem_file_io.write(&public_pem)?;
-        } else {
-            public_pem = String::from_utf8(resp)?;
+                match self.public_pem_file_io.write(&public_pem) {
+                    Ok(_) => {}
+                    _ => {
+                        error!("Public pem file not working");
+                    }
+                }
+            }
         }
-
         let claims = self.validator.verify(&token, &public_pem)?;
 
-        Ok(claims)
-    }
-
-    pub fn check_exp(&self, claims: &Claims) -> bool {
         let datetime_now = Utc::now();
 
         if claims.exp < datetime_now {
-            true
-        } else {
-            false
+            return Err(AuthServiceError::Expired(claims.exp.to_string()));
         }
+
+        Ok(claims)
     }
 }
