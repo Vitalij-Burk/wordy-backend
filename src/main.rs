@@ -77,6 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState::new(pool)?;
 
+    state.auth_service.provide_public_pem().await?;
+
     let private_router: Router = Router::new()
         .route("/", get(|| async { "Hello world!" }))
         .route("/translate/", post(translate))

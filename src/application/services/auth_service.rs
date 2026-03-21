@@ -72,25 +72,34 @@ impl AuthService {
         })
     }
 
-    pub async fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
-        let public_pem: String;
+    pub async fn provide_public_pem(&self) -> Result<String, AuthServiceError> {
+        let public_pem = self.auth_communicator.get_public_pem().await?;
 
-        match self.public_pem_file_io.read() {
+        self.public_pem_file_io.write(&public_pem)?;
+
+        Ok(public_pem)
+    }
+
+    pub async fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
+        let public_pem = match self.public_pem_file_io.read() {
             Ok(resp) if !resp.is_empty() => {
-                public_pem = String::from_utf8(resp)?;
+                String::from_utf8(resp)?
             }
             _ => {
                 error!("Public pem file not working");
-                public_pem = self.auth_communicator.get_public_pem().await?;
+                let got_pem = self.auth_communicator.get_public_pem().await?;
 
-                match self.public_pem_file_io.write(&public_pem) {
+                match self.public_pem_file_io.write(&got_pem) {
                     Ok(_) => {}
                     _ => {
                         error!("Public pem file not working");
                     }
                 }
+
+                got_pem
             }
-        }
+        };
+
         let claims = self.validator.verify(&token, &public_pem)?;
 
         let datetime_now = Utc::now();
