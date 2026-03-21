@@ -8,7 +8,7 @@ use crate::{
     AppState,
     api::{
         types::HandlerError,
-        user::models::{CreateUserDTO, UpdateUserDTO, UserDTO},
+        user::models::{UpdateUserDTO, UserDTO},
     },
     application::services::user_service::UserServiceError,
     domain::types::ID,

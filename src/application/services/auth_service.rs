@@ -2,6 +2,7 @@ use std::{path::PathBuf, string::FromUtf8Error};
 
 use crate::{
     api::auth::models::Claims,
+    domain::error::error_handling::log_err,
     infrastructure::{
         auth::token::jwks::jwks_validator::{JwksTokenValidator, JwksTokenValidatorError},
         external_api::auth::auth_requests::{AuthCommunicator, AuthCommunicatorError},
@@ -15,7 +16,6 @@ use tracing::error;
 #[derive(Debug, Clone)]
 pub struct AuthService {
     pub validator: JwksTokenValidator,
-    pub http_client: reqwest::Client,
     pub public_pem_file_io: FileIO,
     pub auth_communicator: AuthCommunicator,
 }
@@ -42,18 +42,12 @@ pub enum AuthServiceError {
 }
 
 impl AuthService {
-    pub fn new() -> Result<Self, AuthServiceError> {
+    pub fn new(keys_dir_path: &str) -> Result<Self, AuthServiceError> {
         let validator = JwksTokenValidator;
-        let http_client = reqwest::Client::new();
-        let keys_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("keys");
+        let keys_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(keys_dir_path);
 
         if !keys_dir.exists() {
-            let _ = std::fs::create_dir(&keys_dir).map_err(|error| match error {
-                err => {
-                    error!("Couldn't create keys directory: {}", &err);
-                    err
-                }
-            });
+            let _ = std::fs::create_dir(&keys_dir).map_err(log_err);
         }
 
         let public_pem_file_io = FileIO::new(
@@ -66,31 +60,32 @@ impl AuthService {
 
         Ok(Self {
             validator,
-            http_client,
             public_pem_file_io,
             auth_communicator,
         })
     }
 
+    pub async fn provide_public_pem(&self) -> Result<String, AuthServiceError> {
+        let public_pem = self.auth_communicator.get_public_pem().await?;
+
+        self.public_pem_file_io.write(&public_pem)?;
+
+        Ok(public_pem)
+    }
+
     pub async fn validate_token(&self, token: &str) -> Result<Claims, AuthServiceError> {
-        let public_pem: String;
-
-        match self.public_pem_file_io.read() {
-            Ok(resp) if !resp.is_empty() => {
-                public_pem = String::from_utf8(resp)?;
-            }
+        let public_pem = match self.public_pem_file_io.read() {
+            Ok(resp) if !resp.is_empty() => String::from_utf8(resp)?,
             _ => {
-                error!("Public pem file not working");
-                public_pem = self.auth_communicator.get_public_pem().await?;
+                error!("Public pem file not provided");
+                let got_pem = self.auth_communicator.get_public_pem().await?;
 
-                match self.public_pem_file_io.write(&public_pem) {
-                    Ok(_) => {}
-                    _ => {
-                        error!("Public pem file not working");
-                    }
-                }
+                let _ = self.public_pem_file_io.write(&got_pem).map_err(log_err)?;
+
+                got_pem
             }
-        }
+        };
+
         let claims = self.validator.verify(&token, &public_pem)?;
 
         let datetime_now = Utc::now();

@@ -3,6 +3,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
+use serde_qs::web::QsQuery;
 
 use crate::{
     AppState,
@@ -14,6 +15,7 @@ use crate::{
         translate_service::TranslateServiceError, user_service::UserServiceError,
         word_pair_service::WordPairServiceError,
     },
+    domain::models::{sort::GetWordPairsQueryList, word_pair::WordPair},
 };
 use crate::{api::types::HandlerError, domain::types::ID};
 
@@ -205,18 +207,35 @@ pub async fn get_word_pair_by_id(
 pub async fn get_word_pairs_by_user_id(
     State(state): State<AppState>,
     Path(user_id): Path<ID>,
+    QsQuery(query): QsQuery<Option<GetWordPairsQueryList>>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
-    let res = state
-        .word_pair_service
-        .get_by_user_id(&user_id)
-        .await
-        .map_err(|error| match error {
-            WordPairServiceError::Database(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-            }
-            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
-        })?;
+    let res: Vec<WordPair>;
+
+    if let Some(query_params) = query {
+        res = state
+            .word_pair_service
+            .get_by_user_id_with_query_data(&user_id, query_params)
+            .await
+            .map_err(|error| match error {
+                WordPairServiceError::Database(_) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+                }
+                WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+            })?;
+    } else {
+        res = state
+            .word_pair_service
+            .get_by_user_id(&user_id)
+            .await
+            .map_err(|error| match error {
+                WordPairServiceError::Database(_) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+                }
+                WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+            })?;
+    }
 
     let mut dtos: Vec<WordPairDTO> = vec![];
 
@@ -230,6 +249,7 @@ pub async fn get_word_pairs_by_user_id(
 pub async fn get_word_pairs_by_user_key(
     State(state): State<AppState>,
     Path(key): Path<String>,
+    QsQuery(query): QsQuery<Option<GetWordPairsQueryList>>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
     let user = state
         .user_service
@@ -243,17 +263,33 @@ pub async fn get_word_pairs_by_user_key(
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
         })?;
 
-    let res = state
-        .word_pair_service
-        .get_by_user_id(&user.id)
-        .await
-        .map_err(|error| match error {
-            WordPairServiceError::Database(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-            }
-            WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
-        })?;
+    let res: Vec<WordPair>;
+
+    if let Some(query_params) = query {
+        res = state
+            .word_pair_service
+            .get_by_user_id_with_query_data(&user.id, query_params)
+            .await
+            .map_err(|error| match error {
+                WordPairServiceError::Database(_) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+                }
+                WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+            })?;
+    } else {
+        res = state
+            .word_pair_service
+            .get_by_user_id(&user.id)
+            .await
+            .map_err(|error| match error {
+                WordPairServiceError::Database(_) => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+                }
+                WordPairServiceError::NotFound(_) => (StatusCode::NOT_FOUND, "Word pair not found"),
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unknown error"),
+            })?;
+    }
 
     let mut dtos: Vec<WordPairDTO> = vec![];
 

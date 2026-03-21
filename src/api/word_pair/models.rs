@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -12,6 +13,8 @@ pub struct WordPairDTO {
     pub source_text: String,
     pub target_language: String,
     pub source_language: String,
+
+    pub created_at: DateTime<Utc>,
 }
 
 impl From<WordPair> for WordPairDTO {
@@ -23,6 +26,7 @@ impl From<WordPair> for WordPairDTO {
             source_text: value.source_text,
             target_language: value.target_language,
             source_language: value.source_language,
+            created_at: value.created_at,
         }
     }
 }

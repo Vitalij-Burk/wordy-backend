@@ -168,6 +168,7 @@ dependencies = [
  "rsa",
  "serde",
  "serde_json",
+ "serde_qs",
  "sha2",
  "sqlx",
  "thiserror",
@@ -2293,6 +2294,21 @@ dependencies = [
  "itoa",
  "serde",
  "serde_core",
+]
+
+[[package]]
+name = "serde_qs"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c742cd44662647326f86b514eadcc227fff4ce684dbbdaf1943f758d5ea058c"
+dependencies = [
+ "axum",
+ "futures",
+ "itoa",
+ "percent-encoding",
+ "ryu",
+ "serde",
+ "tracing",
 ]
 
 [[package]]

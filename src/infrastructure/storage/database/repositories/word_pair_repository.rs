@@ -1,13 +1,16 @@
 use crate::{
     domain::{
-        models::word_pair::WordPair,
+        models::{
+            sort::{FilterBy, GetWordPairsQueryList, SortBy, SortDirection, TimeRange},
+            word_pair::WordPair,
+        },
         traits::repositories::{repository::Repository, word_pair_repository::IWordPairRepository},
         types::ID,
     },
     infrastructure::storage::database::models::word_pair::WordPairEntity,
 };
 use async_trait::async_trait;
-use sqlx::{Error, postgres::PgPool};
+use sqlx::{Error, QueryBuilder, postgres::PgPool};
 
 #[derive(Clone)]
 pub struct WordPairPostgresRepository {
@@ -78,6 +81,77 @@ impl IWordPairRepository for WordPairPostgresRepository {
             .bind(user_id)
             .fetch_all(&self.db)
             .await?;
+
+        let mut word_pairs: Vec<Self::Item> = Vec::new();
+
+        for entity in db_entities.iter() {
+            word_pairs.push(Self::Item::from(entity));
+        }
+
+        Ok(word_pairs)
+    }
+
+    async fn select_by_user_id_with_sort_and_filters(
+        &self,
+        user_id: &ID,
+        query_params: GetWordPairsQueryList,
+    ) -> Result<Vec<Self::Item>, Self::Error> {
+        let mut query_builder = QueryBuilder::new(
+            "SELECT id, user_id, target_text, source_text, target_language, source_language, created_at FROM word_pairs WHERE user_id = ",
+        );
+        query_builder.push_bind(user_id);
+
+        if let Some(filters) = query_params.filter_by {
+            for filter in filters {
+                match filter {
+                    FilterBy::Time(time_range) => match time_range {
+                        TimeRange::To(time) => {
+                            query_builder.push(" AND created_at < ").push_bind(time);
+                        }
+                        TimeRange::From(time) => {
+                            query_builder.push(" AND created_at > ").push_bind(time);
+                        }
+                        TimeRange::Between(time_1, time_2) => {
+                            query_builder.push(" AND created_at > ").push_bind(time_1);
+                            query_builder.push(" AND created_at < ").push_bind(time_2);
+                        }
+                    },
+                    FilterBy::Language {
+                        target_language,
+                        source_language,
+                    } => {
+                        if let Some(target) = target_language {
+                            query_builder
+                                .push(" AND target_language = ")
+                                .push_bind(target);
+                        }
+                        if let Some(source) = source_language {
+                            query_builder
+                                .push(" AND source_language = ")
+                                .push_bind(source);
+                        }
+                    }
+                }
+            }
+        }
+
+        match query_params.sort_by {
+            Some(SortBy::Time(direction)) => {
+                query_builder.push(" ORDER BY created_at ");
+                match direction {
+                    SortDirection::Asc => {
+                        query_builder.push("ASC");
+                    }
+                    SortDirection::Desc => {
+                        query_builder.push("DESC");
+                    }
+                }
+            }
+            None => {}
+        }
+
+        let db_entities: Vec<WordPairEntity> =
+            query_builder.build_query_as().fetch_all(&self.db).await?;
 
         let mut word_pairs: Vec<Self::Item> = Vec::new();
 

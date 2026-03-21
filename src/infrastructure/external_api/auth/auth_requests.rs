@@ -1,7 +1,7 @@
 use std::env::VarError;
 
+use crate::domain::error::error_handling::log_err;
 use thiserror::Error;
-use tracing::error;
 
 #[derive(Debug, Clone, Copy)]
 pub struct AuthCommunicator;
@@ -22,28 +22,13 @@ impl AuthCommunicator {
         let resp = client
             .get(format!(
                 "{}/key/public",
-                std::env::var("AUTH_ADDRESS").map_err(|error| match error {
-                    _ => {
-                        error!("{}", error.to_string());
-                        error
-                    }
-                })?
+                std::env::var("AUTH_ADDRESS").map_err(log_err)?
             ))
             .send()
             .await
-            .map_err(|error| match error {
-                _ => {
-                    error!("{}", error.to_string());
-                    error
-                }
-            })?;
+            .map_err(log_err)?;
 
-        let public_pem: String = resp.text().await.map_err(|error| match error {
-            _ => {
-                error!("{}", error.to_string());
-                error
-            }
-        })?;
+        let public_pem: String = resp.text().await.map_err(log_err)?;
 
         Ok(public_pem)
     }

@@ -1,9 +1,9 @@
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use thiserror::Error;
-use tracing::error;
 
 use crate::{
     api::auth::models::Claims,
+    domain::error::error_handling::log_err,
     infrastructure::auth::token::jwks::claims::{JwksClaims, JwksClaimsError, usize_to_datetime},
 };
 
@@ -24,21 +24,10 @@ pub enum JwksTokenValidatorError {
 
 impl JwksTokenValidator {
     pub fn verify(&self, token: &str, public_pem: &str) -> Result<Claims, JwksTokenValidatorError> {
-        let key =
-            DecodingKey::from_rsa_pem(public_pem.as_bytes()).map_err(|error| match error {
-                _ => {
-                    error!("{}", error);
-                    error
-                }
-            })?;
+        let key = DecodingKey::from_rsa_pem(public_pem.as_bytes()).map_err(log_err)?;
 
         let storage_claims = decode::<JwksClaims>(&token, &key, &Validation::new(Algorithm::RS256))
-            .map_err(|error| match error {
-                _ => {
-                    error!("{}", error);
-                    error
-                }
-            })?
+            .map_err(log_err)?
             .claims;
 
         let claims = Claims {

@@ -47,6 +47,8 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(db: PgPool) -> Result<Self, Box<dyn std::error::Error>> {
+        let key_folder = "keys";
+
         let user_repo = UserPostgresRepository::new(db.clone());
         let word_pair_repo = WordPairPostgresRepository::new(db.clone());
         let translator = TranslatorsTranslator;
@@ -54,7 +56,7 @@ impl AppState {
         let user_service = UserService::new(user_repo);
         let word_pair_service = WordPairService::new(word_pair_repo);
         let translate_service = TranslateService::new(translator);
-        let auth_service = AuthService::new()?;
+        let auth_service = AuthService::new(key_folder)?;
 
         Ok(Self {
             translate_service: translate_service,
@@ -67,9 +69,9 @@ impl AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenvy::dotenv().ok();
-
     tracing_subscriber::fmt::init();
+
+    dotenvy::dotenv().ok();
 
     let pool = PgPoolOptions::new()
         .connect(&std::env::var("DATABASE_URL")?)
@@ -77,8 +79,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState::new(pool)?;
 
+    state.auth_service.provide_public_pem().await?;
+
     let private_router: Router = Router::new()
-        .route("/", get(|| async { "Hello world!" }))
         .route("/translate/", post(translate))
         .route("/user/id/{id}/", get(get_user_by_id))
         .route("/user/key/{key}/", get(get_user_by_key))
@@ -117,13 +120,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(state.clone());
 
     let public_router: Router = Router::new()
+        .route("/", get(|| async { "Hello world!" }))
         .route("/register", post(register))
         .route("/login_by_key", post(login_by_key))
         .with_state(state.clone());
 
-    let app = private_router.merge(public_router);
+    let app = Router::new().merge(public_router).merge(private_router);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app).await?;
 
     Ok(())

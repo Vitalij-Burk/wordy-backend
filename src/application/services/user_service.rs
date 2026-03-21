@@ -6,6 +6,7 @@ use tracing::error;
 use crate::{
     api::user::models::{CreateUserDTO, UpdateUserDTO},
     domain::{
+        error::error_handling::log_err,
         models::user::User,
         traits::{
             crypto::crypto::ICrypto,
@@ -156,10 +157,7 @@ where
 
         user.update(params.key.clone(), params.name.clone());
 
-        let res = self.repo.update_by_id(&user).await.map_err(|error| {
-            error!("User DB error: {}", error);
-            error
-        })?;
+        let res = self.repo.update_by_id(&user).await.map_err(log_err)?;
 
         Ok(res)
     }
