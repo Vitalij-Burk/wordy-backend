@@ -15,21 +15,17 @@ pub async fn auth_middleware(
     mut req: Request,
     next: Next,
 ) -> Result<Response, JsonError> {
-    let auth_header = req
+    let token = req
         .headers()
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
-        .unwrap_or("");
-
-    if !auth_header.starts_with("Bearer") {
-        return Err((StatusCode::UNAUTHORIZED, "User unauthorized"))
-    }
-
-    let token = auth_header.strip_prefix("Bearer ").unwrap_or("").to_string();
-
-    if token.is_empty() {
-        return Err((StatusCode::UNAUTHORIZED, "User unauthorized"))
-    }
+        .and_then(|h| h.strip_prefix("Bearer "))
+        .ok_or_else(|| {
+            (
+                StatusCode::UNAUTHORIZED,
+                "Invalid bearer token",
+            )
+        })?;
 
     let claims = state
         .auth_service
@@ -43,13 +39,8 @@ pub async fn auth_middleware(
             | AuthServiceError::Validation(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
             }
+            AuthServiceError::Expired(_) => (StatusCode::UNAUTHORIZED, "Token is expired"),
         })?;
-
-    let is_expired = state.auth_service.check_exp(&claims);
-
-    if is_expired {
-        return Err((StatusCode::UNAUTHORIZED, "User unauthorized"))
-    }
 
     req.extensions_mut().insert(claims);
 

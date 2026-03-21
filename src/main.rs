@@ -7,9 +7,10 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 use crate::{
     api::{
         auth::auth_middleware::auth_middleware,
+        login::login_handlers::{login_by_key, register},
         translate::translate_handlers::translate,
         user::user_handlers::{
-            create_user, delete_user_by_id, get_user_by_id, get_user_by_key, update_user_by_id,
+            delete_user_by_id, get_user_by_id, get_user_by_key, update_user_by_id,
         },
         word_pair::word_pair_handlers::{
             add_word_pair_by_user_id, add_word_pair_by_user_key, delete_word_pair_by_id,
@@ -45,7 +46,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(db: PgPool) -> Self {
+    pub fn new(db: PgPool) -> Result<Self, Box<dyn std::error::Error>> {
         let user_repo = UserPostgresRepository::new(db.clone());
         let word_pair_repo = WordPairPostgresRepository::new(db.clone());
         let translator = TranslatorsTranslator;
@@ -53,14 +54,14 @@ impl AppState {
         let user_service = UserService::new(user_repo);
         let word_pair_service = WordPairService::new(word_pair_repo);
         let translate_service = TranslateService::new(translator);
-        let auth_service = AuthService::new();
+        let auth_service = AuthService::new()?;
 
-        Self {
+        Ok(Self {
             translate_service: translate_service,
             user_service: user_service,
             word_pair_service: word_pair_service,
             auth_service: auth_service,
-        }
+        })
     }
 }
 
@@ -74,11 +75,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&std::env::var("DATABASE_URL")?)
         .await?;
 
-    let state = AppState::new(pool);
+    let state = AppState::new(pool)?;
 
-    let app: Router = Router::new()
+    state.auth_service.provide_public_pem().await?;
+
+    let private_router: Router = Router::new()
         .route("/", get(|| async { "Hello world!" }))
-        .route("/user/create/", post(create_user))
         .route("/translate/", post(translate))
         .route("/user/id/{id}/", get(get_user_by_id))
         .route("/user/key/{key}/", get(get_user_by_key))
@@ -114,9 +116,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             state.clone(),
             auth_middleware,
         ))
-        .with_state(state);
+        .with_state(state.clone());
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    let public_router: Router = Router::new()
+        .route("/register", post(register))
+        .route("/login_by_key", post(login_by_key))
+        .with_state(state.clone());
+
+    let app = private_router.merge(public_router);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
     axum::serve(listener, app).await?;
 
     Ok(())

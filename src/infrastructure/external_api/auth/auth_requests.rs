@@ -1,6 +1,7 @@
 use std::env::VarError;
 
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Clone, Copy)]
 pub struct AuthCommunicator;
@@ -19,11 +20,30 @@ impl AuthCommunicator {
         let client = reqwest::Client::new();
 
         let resp = client
-            .post(format!("{}/key/public", std::env::var("AUTH_ADDRESS")?))
+            .get(format!(
+                "{}/key/public",
+                std::env::var("AUTH_ADDRESS").map_err(|error| match error {
+                    _ => {
+                        error!("{}", error.to_string());
+                        error
+                    }
+                })?
+            ))
             .send()
-            .await?;
+            .await
+            .map_err(|error| match error {
+                _ => {
+                    error!("{}", error.to_string());
+                    error
+                }
+            })?;
 
-        let public_pem: String = resp.json::<String>().await?;
+        let public_pem: String = resp.text().await.map_err(|error| match error {
+            _ => {
+                error!("{}", error.to_string());
+                error
+            }
+        })?;
 
         Ok(public_pem)
     }

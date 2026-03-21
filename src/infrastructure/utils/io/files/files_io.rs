@@ -17,7 +17,7 @@ impl FileIO {
     }
 
     pub fn write(&self, data: &str) -> Result<(), std::io::Error> {
-        let _ = write(&self.file_path, &data).map_err(|error| match error {
+        let _ = write(&self.file_path, &data.as_bytes()).map_err(|error| match error {
             err => {
                 error!("IO error caused: {}", &err);
                 err
