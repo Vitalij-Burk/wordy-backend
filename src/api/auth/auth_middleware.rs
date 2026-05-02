@@ -20,12 +20,7 @@ pub async fn auth_middleware(
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
         .and_then(|h| h.strip_prefix("Bearer "))
-        .ok_or_else(|| {
-            (
-                StatusCode::UNAUTHORIZED,
-                "Invalid bearer token",
-            )
-        })?;
+        .ok_or_else(|| (StatusCode::UNAUTHORIZED, "Invalid bearer token"))?;
 
     let claims = state
         .auth_service

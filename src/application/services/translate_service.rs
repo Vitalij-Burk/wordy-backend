@@ -1,9 +1,11 @@
 use thiserror::Error;
-use tracing::error;
 
 use crate::{
     api::translate::models::TranslateDTO,
-    domain::{models::translate::Translation, traits::translate::translator::ITranslator},
+    domain::{
+        error::error_handling::log_err, models::translate::Translation,
+        traits::translate::translator::ITranslator,
+    },
 };
 
 #[derive(Clone)]
@@ -45,10 +47,7 @@ where
                 &params.target_language,
             )
             .await
-            .map_err(|error| {
-                error!("Translation error: {}", error);
-                error
-            })?;
+            .map_err(log_err)?;
 
         let translation = Translation::new(
             &res,

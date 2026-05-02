@@ -7,15 +7,6 @@
 1. Text translate
 2. Collecting your saved translations in storage
 
-## Routing:
-
-- POST /user/create
-- POST /translate
-- POST /user/user_id/{user_id}/wordpair/create
-- POST /user/key/{key}/wordpair/create
-- GET /user/user_id/{user_id}/wordpair
-- GET /user/key/{key}/wordpair
-
 ## Code Architecture:
 
 - Clean Architecture
@@ -27,16 +18,15 @@
 - **Backend**: Rust + Axum + SQLx
 - **Database**: PostgreSQL
 - **API**: Google Translate API via translators
-- **Telegram-bot**: Rust + Teloxide
+- **Mobile**: Kotlin
 - **Docker**
 
 ## TODO:
 
-- [ ] Authorization && Authentication
+- [-] Authorization && Authentication
 - [ ] Host Backend
-- [ ] Develop telegram-bot for MVP on Teloxide
-- [ ] Develop CLI for MVP on Clap
-- [ ] Develop Mobile App on Kotlin | Java
+- [ ] Develop Mobile App on Kotlin
+- [ ] Rewrite sync HTTP with async RabbitMQ
 - [ ] Collections logics
 - [ ] Use another tool for translate
 - [ ] Do sorting

@@ -15,6 +15,7 @@ ARG APP_NAME=backend
 FROM rust:${RUST_VERSION}-alpine AS build
 ARG APP_NAME
 WORKDIR /app
+COPY . .
 
 # Install host build dependencies.
 RUN apk add --no-cache clang lld musl-dev build-base git pkgconfig openssl-dev openssl-libs-static linux-headers
@@ -51,19 +52,14 @@ FROM alpine:3.18 AS final
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
-ARG UID=10001
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    appuser
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g $GID -S appgroup && adduser -u $UID -S appuser -G appgroup
 USER appuser
 
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin/
+COPY --from=build --chown=appuser:appgroup /app /app
 
 # Expose the port that the application listens on.
 EXPOSE 3000

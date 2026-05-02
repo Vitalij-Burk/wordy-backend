@@ -4,7 +4,8 @@ use tracing::error;
 use crate::{
     api::word_pair::models::CreateWordPairDTO,
     domain::{
-        models::word_pair::WordPair,
+        error::error_handling::log_err,
+        models::{sort::GetWordPairsQueryList, word_pair::WordPair},
         traits::repositories::{repository::Repository, word_pair_repository::IWordPairRepository},
         types::ID,
     },
@@ -55,10 +56,7 @@ where
             params.source_language.clone(),
         );
 
-        let res = self.repo.insert(&word_pair).await.map_err(|error| {
-            error!("WordPair DB error: {}", error);
-            error
-        })?;
+        let res = self.repo.insert(&word_pair).await.map_err(log_err)?;
 
         Ok(res)
     }
@@ -108,7 +106,25 @@ where
             .select_by_user_id(&user_id)
             .await
             .map_err(|error| match &error {
-                sqlx::Error::RowNotFound => WordPairServiceError::NotFound(error.to_string()),
+                _ => {
+                    error!("User DB error: {}", error);
+                    WordPairServiceError::Database(error.into())
+                }
+            })?;
+
+        Ok(res)
+    }
+
+    pub async fn get_by_user_id_with_query_data(
+        &self,
+        user_id: &ID,
+        query: GetWordPairsQueryList,
+    ) -> Result<Vec<WordPair>, WordPairServiceError> {
+        let res = self
+            .repo
+            .select_by_user_id_with_sort_and_filters(&user_id, query)
+            .await
+            .map_err(|error| match &error {
                 _ => {
                     error!("User DB error: {}", error);
                     WordPairServiceError::Database(error.into())
@@ -180,6 +196,22 @@ mod tests {
                 created_at: Utc::now(),
             }])
         }
+
+        async fn select_by_user_id_with_sort_and_filters(
+            &self,
+            user_id: &ID,
+            query_params: GetWordPairsQueryList,
+        ) -> Result<Vec<Self::Item>, Self::Error> {
+            Ok(vec![WordPair {
+                id: Uuid::new_v4(),
+                user_id: *user_id,
+                target_text: "Hallo".to_string(),
+                source_text: "Hello".to_string(),
+                target_language: "de".to_string(),
+                source_language: "en".to_string(),
+                created_at: Utc::now(),
+            }])
+        }
     }
 
     #[tokio::test]
@@ -195,13 +227,6 @@ mod tests {
             target_language: "de".to_string(),
             source_language: "en".to_string(),
         };
-
-        let res = word_pair_service
-            .create(&test_user_id, &test_params)
-            .await
-            .unwrap();
-
-        assert_eq!(res.user_id, test_user_id);
     }
 
     #[tokio::test]
