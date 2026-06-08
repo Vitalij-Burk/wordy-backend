@@ -40,6 +40,7 @@ where
     Repo: Repository<Item = WordPair, Entity = WordPairEntity, Error = sqlx::Error>,
 {
     pub fn new(repo: Repo) -> Self {
+        tracing::info!("WordPairService initialized");
         Self { repo: repo }
     }
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Request, State},
     http::header,
@@ -7,11 +9,11 @@ use axum::{
 use reqwest::StatusCode;
 
 use crate::{
-    AppState, api::types::JsonError, application::services::auth_service::AuthServiceError,
+    AppState, api::types::JsonError, application::services::auth::auth_service::AuthServiceError,
 };
 
 pub async fn auth_middleware(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, JsonError> {
@@ -27,12 +29,16 @@ pub async fn auth_middleware(
         .validate_token(&token)
         .await
         .map_err(|error| match error {
-            AuthServiceError::AuthCommunicator(_)
-            | AuthServiceError::IO(_)
+            AuthServiceError::IO(_)
+            | AuthServiceError::Jwt(_)
+            | AuthServiceError::Standard(_)
             | AuthServiceError::Unknown
             | AuthServiceError::FromUtf8(_)
             | AuthServiceError::Validation(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
+            AuthServiceError::KeyManager(_) | AuthServiceError::AuthCommunicator(_) => {
+                (StatusCode::SERVICE_UNAVAILABLE, "Service unavailable")
             }
             AuthServiceError::Expired(_) => (StatusCode::UNAUTHORIZED, "Token is expired"),
         })?;

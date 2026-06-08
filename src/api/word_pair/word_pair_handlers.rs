@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     Json,
     extract::{Path, State},
@@ -12,15 +14,15 @@ use crate::{
         word_pair::models::{CreateWordPairDTO, WordPairDTO},
     },
     application::services::{
-        translate_service::TranslateServiceError, user_service::UserServiceError,
-        word_pair_service::WordPairServiceError,
+        translate::translate_service::TranslateServiceError, user::user_service::UserServiceError,
+        word_pair::word_pair_service::WordPairServiceError,
     },
     domain::models::{sort::GetWordPairsQueryList, word_pair::WordPair},
 };
 use crate::{api::types::HandlerError, domain::types::ID};
 
 pub async fn translate_and_add_word_pair_by_user_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<ID>,
     Json(dto): Json<TranslateDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
@@ -66,7 +68,7 @@ pub async fn translate_and_add_word_pair_by_user_id(
 }
 
 pub async fn translate_and_add_word_pair_by_user_key(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
     Json(dto): Json<TranslateDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
@@ -124,7 +126,7 @@ pub async fn translate_and_add_word_pair_by_user_key(
 }
 
 pub async fn add_word_pair_by_user_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<ID>,
     Json(dto): Json<CreateWordPairDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
@@ -148,7 +150,7 @@ pub async fn add_word_pair_by_user_id(
 }
 
 pub async fn add_word_pair_by_user_key(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
     Json(dto): Json<CreateWordPairDTO>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
@@ -184,7 +186,7 @@ pub async fn add_word_pair_by_user_key(
 }
 
 pub async fn get_word_pair_by_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<ID>,
 ) -> Result<Json<WordPairDTO>, HandlerError> {
     let res = state
@@ -205,7 +207,7 @@ pub async fn get_word_pair_by_id(
 }
 
 pub async fn get_word_pairs_by_user_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(user_id): Path<ID>,
     QsQuery(query): QsQuery<Option<GetWordPairsQueryList>>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
@@ -247,7 +249,7 @@ pub async fn get_word_pairs_by_user_id(
 }
 
 pub async fn get_word_pairs_by_user_key(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
     QsQuery(query): QsQuery<Option<GetWordPairsQueryList>>,
 ) -> Result<Json<Vec<WordPairDTO>>, HandlerError> {
@@ -301,7 +303,7 @@ pub async fn get_word_pairs_by_user_key(
 }
 
 pub async fn delete_word_pair_by_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<ID>,
 ) -> Result<(), HandlerError> {
     state

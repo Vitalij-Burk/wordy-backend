@@ -30,6 +30,7 @@ where
     Translator: ITranslator<Item = String, Error = translators::Error>,
 {
     pub fn new(translator: Translator) -> Self {
+        tracing::info!("TranslateService initialized");
         Self {
             translator: translator,
         }

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     Json,
     extract::{Path, State},
@@ -10,12 +12,12 @@ use crate::{
         types::HandlerError,
         user::models::{UpdateUserDTO, UserDTO},
     },
-    application::services::user_service::UserServiceError,
+    application::services::user::user_service::UserServiceError,
     domain::types::ID,
 };
 
 pub async fn get_user_by_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<ID>,
 ) -> Result<Json<UserDTO>, HandlerError> {
     let res = state
@@ -36,7 +38,7 @@ pub async fn get_user_by_id(
 }
 
 pub async fn get_user_by_key(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
 ) -> Result<Json<UserDTO>, HandlerError> {
     let res = state
@@ -57,7 +59,7 @@ pub async fn get_user_by_key(
 }
 
 pub async fn update_user_by_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<ID>,
     Json(dto): Json<UpdateUserDTO>,
 ) -> Result<Json<UserDTO>, HandlerError> {
@@ -86,7 +88,7 @@ pub async fn update_user_by_id(
 }
 
 pub async fn delete_user_by_id(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Path(id): Path<ID>,
 ) -> Result<(), HandlerError> {
     state

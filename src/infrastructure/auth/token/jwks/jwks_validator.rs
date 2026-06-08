@@ -7,8 +7,10 @@ use crate::{
     infrastructure::auth::token::jwks::claims::{JwksClaims, JwksClaimsError, usize_to_datetime},
 };
 
-#[derive(Debug, Clone, Copy)]
-pub struct JwksTokenValidator;
+#[derive(Debug, Clone)]
+pub struct JwksTokenValidator {
+    validation: Validation,
+}
 
 #[derive(Debug, Error)]
 pub enum JwksTokenValidatorError {
@@ -23,10 +25,30 @@ pub enum JwksTokenValidatorError {
 }
 
 impl JwksTokenValidator {
-    pub fn verify(&self, token: &str, public_pem: &str) -> Result<Claims, JwksTokenValidatorError> {
-        let key = DecodingKey::from_rsa_pem(public_pem.as_bytes()).map_err(log_err)?;
+    pub fn new() -> Self {
+        let validation = Validation::new(Algorithm::RS256);
 
-        let storage_claims = decode::<JwksClaims>(&token, &key, &Validation::new(Algorithm::RS256))
+        Self { validation }
+    }
+
+    pub fn verify(
+        &self,
+        token: &str,
+        decoding_key: &DecodingKey,
+    ) -> Result<bool, JwksTokenValidatorError> {
+        let _ = decode::<JwksClaims>(&token, &decoding_key, &self.validation)
+            .map_err(log_err)?
+            .claims;
+
+        Ok(true)
+    }
+
+    pub fn decode(
+        &self,
+        token: &str,
+        decoding_key: &DecodingKey,
+    ) -> Result<Claims, JwksTokenValidatorError> {
+        let storage_claims = decode::<JwksClaims>(&token, &decoding_key, &self.validation)
             .map_err(log_err)?
             .claims;
 

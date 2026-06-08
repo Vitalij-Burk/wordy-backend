@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     Router,
     routing::{get, post},
@@ -19,12 +21,13 @@ use crate::{
         },
     },
     application::services::{
-        auth_service::AuthService, translate_service::TranslateService, user_service::UserService,
-        word_pair_service::WordPairService,
+        auth::auth_service::AuthService, translate::translate_service::TranslateService,
+        user::user_service::UserService, word_pair::word_pair_service::WordPairService,
     },
     domain::traits::repositories::repository::Repository,
     infrastructure::{
         external_api::translate::translate::TranslatorsTranslator,
+        queues::rabbitmq::rabbitmq::RabbitMQ,
         storage::database::repositories::{
             user_repository::UserPostgresRepository,
             word_pair_repository::WordPairPostgresRepository,
@@ -46,9 +49,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(db: PgPool) -> Result<Self, Box<dyn std::error::Error>> {
-        let key_folder = "keys";
-
+    pub async fn new(db: PgPool, rabbitmq: RabbitMQ) -> Result<Self, Box<dyn std::error::Error>> {
         let user_repo = UserPostgresRepository::new(db.clone());
         let word_pair_repo = WordPairPostgresRepository::new(db.clone());
         let translator = TranslatorsTranslator;
@@ -56,7 +57,9 @@ impl AppState {
         let user_service = UserService::new(user_repo);
         let word_pair_service = WordPairService::new(word_pair_repo);
         let translate_service = TranslateService::new(translator);
-        let auth_service = AuthService::new(key_folder)?;
+
+        let rabbit_channel = rabbitmq.declare_channel().await?;
+        let auth_service = AuthService::new(rabbit_channel).await?;
 
         Ok(Self {
             translate_service: translate_service,
@@ -70,16 +73,27 @@ impl AppState {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
+    tracing::info!("Tracing initialized");
 
     dotenvy::dotenv().ok();
+    tracing::info!("Env files read");
 
     let pool = PgPoolOptions::new()
-        .connect(&std::env::var("DATABASE_URL")?)
+        .connect(&std::env::var("DATABASE_URL").expect("No DATABASE_URL"))
         .await?;
+    tracing::info!("PostgreSQL connected");
 
-    let state = AppState::new(pool)?;
+    let rabbitmq = RabbitMQ::new(&std::env::var("RABBITMQ_URL").expect("NO RABBITMQ_URL")).await?;
+    tracing::info!("RabbitMQ connected");
 
-    state.auth_service.provide_public_pem().await?;
+    let state = Arc::new(AppState::new(pool, rabbitmq).await?);
+
+    state.auth_service.key_manager.sync().await?;
+    tracing::info!("Decoding key sync started");
+
+    state.auth_service.start_http_is_alive_checks().await;
+    state.auth_service.start_rabbitmq_is_alive_checks().await;
+    tracing::info!("Checkers started");
 
     let private_router: Router = Router::new()
         .route("/translate/", post(translate))

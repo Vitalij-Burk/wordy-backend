@@ -22,6 +22,7 @@ impl Repository for UserPostgresRepository {
     type Error = Error;
 
     fn new(db: Self::Pool) -> Self {
+        tracing::info!("User postgres repository initialized");
         Self { db: db }
     }
 

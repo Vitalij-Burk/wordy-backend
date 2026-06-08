@@ -25,6 +25,7 @@ impl Repository for WordPairPostgresRepository {
     type Error = Error;
 
     fn new(db: Self::Pool) -> Self {
+        tracing::info!("Word pair postgres repository initialized");
         Self { db: db }
     }
 

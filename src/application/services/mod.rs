@@ -1,4 +1,4 @@
-pub mod auth_service;
-pub mod translate_service;
-pub mod user_service;
-pub mod word_pair_service;
+pub mod auth;
+pub mod translate;
+pub mod user;
+pub mod word_pair;

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{Json, extract::State};
 use reqwest::StatusCode;
 
@@ -8,13 +10,13 @@ use crate::{
         types::JsonError,
         user::models::{CreateUserDTO, UserDTO},
     },
-    application::services::user_service::UserServiceError,
+    application::services::user::user_service::UserServiceError,
     domain::{traits::crypto::crypto::ICrypto, types::ID},
     infrastructure::utils::password::Argon2Crypto,
 };
 
 pub async fn register(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Json(dto): Json<CreateUserDTO>,
 ) -> Result<Json<UserDTO>, JsonError> {
     let res = state
@@ -40,7 +42,7 @@ pub async fn register(
 }
 
 pub async fn login_by_key(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Json(dto): Json<LoginByKey>,
 ) -> Result<Json<ID>, JsonError> {
     let user = state
@@ -65,9 +67,7 @@ pub async fn login_by_key(
 
     hasher
         .verify(&dto.password, &user.hashed_password)
-        .map_err(|_| {
-            (StatusCode::UNAUTHORIZED, "User unauthorized")
-        })?;
+        .map_err(|_| (StatusCode::UNAUTHORIZED, "User unauthorized"))?;
 
     Ok(Json(user.id))
 }

@@ -51,6 +51,7 @@ where
     Repo: Repository<Item = User, Entity = UserEntity, Error = sqlx::Error>,
 {
     pub fn new(repo: Repo) -> Self {
+        tracing::info!("UserService initialized");
         Self { repo: repo }
     }
 

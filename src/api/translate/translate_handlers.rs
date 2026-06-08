@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{Json, extract::State};
 use reqwest::StatusCode;
 
@@ -7,11 +9,11 @@ use crate::{
         translate::models::{TranslateDTO, TranslatedDTO},
         types::HandlerError,
     },
-    application::services::translate_service::TranslateServiceError,
+    application::services::translate::translate_service::TranslateServiceError,
 };
 
 pub async fn translate(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     Json(dto): Json<TranslateDTO>,
 ) -> Result<Json<TranslatedDTO>, HandlerError> {
     let res = state
