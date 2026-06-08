@@ -8,6 +8,8 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - AUTH_SERVER=${AUTH_SERVER}
       - RUST_LOG=debug
   db:
     image: postgres:17-alpine

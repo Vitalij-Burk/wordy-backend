@@ -25,11 +25,6 @@ FROM alpine:3.18 AS final
 ARG APP_NAME=backend
 WORKDIR /app
 
-#ARG UID=1000
-#ARG GID=1000
-#RUN addgroup -g $GID -S appgroup && adduser -u $UID -S appuser -G appgroup
-#USER appuser
-
 COPY --from=build /bin/${APP_NAME} /bin/
 
 EXPOSE 3000
